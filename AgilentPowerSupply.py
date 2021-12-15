@@ -7,7 +7,7 @@ class AgilentSupply():
 
     def id(self):
         return self.inst.query('*IDN?')
-    def setLimits(self, range1='P20V', range2='P8V', v1=12.0, c1=1.0, v2=1.5, c2=1.0):
+    def setLimits(self, range1='P20V', range2='P8V', v1=12.0, c1=1.0, v2=1.2, c2=0.6):
         self.inst.write(f'INST:SEL OUT1\nVOLT:RANG {range1}\nVOLT {v1}\nCURR {c1}')
         self.inst.write(f'INST:SEL OUT2\nVOLT:RANG {range2}\nVOLT {v2}\nCURR {c2}')
 
@@ -16,26 +16,27 @@ class AgilentSupply():
     def turnOff(self):
         self.inst.write('OUTP OFF')
 
-    def read(self):
+    def read(self, verbose=False):
         curr1=float(self.inst.query('INST:SEL OUT1\nMEAS:CURR:DC?')[:-1])
         curr2=float(self.inst.query('INST:SEL OUT2\nMEAS:CURR:DC?')[:-1])
 
         volt1=float(self.inst.query('INST:SEL OUT1\nMEAS:VOLT:DC?')[:-1])
         volt2=float(self.inst.query('INST:SEL OUT2\nMEAS:VOLT:DC?')[:-1])
-
-        print(f'V1={volt1}, C1={curr1}')
-        print(f'V2={volt2}, C2={curr2}')
+        if verbose:
+            print(f'V1={volt1}, C1={curr1}')
+            print(f'V2={volt2}, C2={curr2}')
         return volt1,curr1,volt2,curr2
 
-    def readLimits(self):
+    def readLimits(self, verbose=False):
         curr1=float(self.inst.query('INST:SEL OUT1\nCURR?')[:-1])
         curr2=float(self.inst.query('INST:SEL OUT2\nCURR?')[:-1])
 
         volt1=float(self.inst.query('INST:SEL OUT1\nVOLT?')[:-1])
         volt2=float(self.inst.query('INST:SEL OUT2\nVOLT?')[:-1])
-        print('Limits')
-        print(f'V1={volt1}, C1={curr1}')
-        print(f'V2={volt2}, C2={curr2}')
+        if verbose:
+            print('Limits')
+            print(f'V1={volt1}, C1={curr1}')
+            print(f'V2={volt2}, C2={curr2}')
         return volt1,curr1,volt2,curr2
 
 
@@ -70,8 +71,8 @@ if __name__=='__main__':
         sleep(5)
         agilent.turnOn()
     if args.read:
-        agilent.read()
+        agilent.read(verbose=True)
     if args.limits:
-        agilent.readLimits()
+        agilent.readLimits(verbose=True)
     if args.set:
         agilent.setLimits(args.r1, args.r2, args.v1, args.c1, args.v2, args.c2)
