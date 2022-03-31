@@ -2,9 +2,6 @@ import argparse
 from urllib.request import urlopen
 import numpy as np
 import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
 from datetime import datetime, timedelta
 import math
 from time import sleep
@@ -18,7 +15,7 @@ def checkdigit(s):
 
 # Using http interface.
 # Return: DataFrame with columns 'timestamp', 'proton count', and 'Integrated Protons'
-def getITAdata(T1, T2, device, logger, testrange=-1):
+def getITAdata(T1, T2, device='E:UTR112', logger='MTA', testrange=-1):
     encoding = 'utf-8'
     URL = 'http://www-bd.fnal.gov/cgi-bin/acl.pl?acl=logger_get/start='+str(T1)+'/end='+str(T2)+'/node='+logger+'+'+str(device)
     if debug: print (URL)
@@ -68,7 +65,7 @@ def getITAdata(T1, T2, device, logger, testrange=-1):
     #close loop over entries
     # Add lists to dataframe, and convert the timestamps to epoch seconds (not nanoseconds)
     df = pd.DataFrame({'timestamp':timestamps, 'proton count':values})
-    df['timestamp'] = df['timestamp'].astype('int64')//1.0e9
+#    df['timestamp'] = df['timestamp'].astype('int64')//1.0e9
 
     # Add cumulative sum to the dataframe, and return
     df.sort_values('timestamp', inplace=True)
@@ -80,7 +77,7 @@ def normalRun(cmdT1, cmdT2, debug, goal, extrapolate, extrapo):
     ###########################################################################
     # Main body of the script
     ###########################################################################
-    total, df  = getITAdata(cmdT1, cmdT2, 'E:UTR112', 'MTA')
+    total, df  = getITAdata(cmdT1, cmdT2)
 
     print('Integrated protons at ITA:')
     print (cmdT1+" to "+cmdT2 +': ' + '{0:.2e}'.format(total),)
@@ -272,6 +269,10 @@ if __name__=='__main__':
 
     options = parser.parse_args()
 
+    if options.makePlot:
+        import seaborn as sns
+        import matplotlib.pyplot as plt
+        import matplotlib.patches as mpatches
 
     ### ...and assign them to variables. (No declaration needed, just like bash!)
     debug     = options.debug
@@ -308,14 +309,16 @@ if __name__=='__main__':
         while True:
             now = pd.Timestamp.now()
             cmdT2 = now.strftime(datetimeformat_str)
-            total, df  = getITAdata(cmdT1, cmdT2, 'E:UTR112', 'MTA')
-            df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s')
+            total, df  = getITAdata(cmdT1, cmdT2)
+#            df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+            df['timestamp'] = pd.to_datetime(df['timestamp'])
             if first:
                 print(df)
                 first=False
             else:
                 N=len(df)
-                print(df.loc[N-1:N])
+#                print(df.loc[N-1:N])
+                print(df)
             cmdT1 = cmdT2
             sleep(60)
     else:

@@ -11,8 +11,27 @@ class AgilentSupply():
         self.inst.write(f'INST:SEL OUT1\nVOLT:RANG {range1}\nVOLT {v1}\nCURR {c1}')
         self.inst.write(f'INST:SEL OUT2\nVOLT:RANG {range2}\nVOLT {v2}\nCURR {c2}')
 
+    def asicOff(self):
+        self.inst.write(f'INST:SEL OUT2\nVOLT:RANG P8V\nVOLT {0}')
+
+    def asicOn(self):
+        self.inst.write(f'INST:SEL OUT2\nVOLT:RANG P8V\nVOLT {1.2}')
+
     def turnOn(self):
-        self.inst.write('OUTP ON')
+        #check Limits before turning on
+        vEm,cEm,vAsic,cAsic=self.readLimits()
+        if (vEm==12) and (cEm==1) and (vAsic==1.2) and (cAsic==0.6):
+            self.inst.write('OUTP ON')
+        else:
+            print('ERROR, WRONG LIMITS')
+            e_vem="" if vEm==12 else "SHOULD BE 12"
+            e_cem="" if cEm==1 else "SHOULD BE 1"
+            e_vas="" if vAsic==1.2 else "SHOULD BE 1.2"
+            e_cas="" if cAsic==0.6 else "SHOULD BE 0.6"
+            print(f'V_Emulator = {vEm} {e_vem}')
+            print(f'I_Emulator = {cEm} {e_cem}')
+            print(f'V_ASIC     = {vAsic} {e_vas}')
+            print(f'I_ASIC     = {cAsic} {e_cas}')
     def turnOff(self):
         self.inst.write('OUTP OFF')
 
@@ -76,3 +95,5 @@ if __name__=='__main__':
         agilent.readLimits(verbose=True)
     if args.set:
         agilent.setLimits(args.r1, args.r2, args.v1, args.c1, args.v2, args.c2)
+
+
