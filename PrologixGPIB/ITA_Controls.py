@@ -1,60 +1,45 @@
 from plx_gpib_ethernet import PrologixGPIBEthernet
 from time import sleep
 class psControl:
-    def __init__(self, ASICAddr=6, hexAddr=11, *args, **kwargs):
+    def __init__(self, Addr=5, *args, **kwargs):
         self.gpib = PrologixGPIBEthernet(*args, **kwargs)
         self.gpib.connect()
-        self.ASICAddr = ASICAddr
-        self.HexAddr = hexAddr
+        self.gpib.select(Addr)
 
     def close(self):
         self.gpib.close()
 
     def disconnect(self):
-        self.gpib.select(self.HexAddr)
         self.gpib.disconnect()
-        sleep(.5)
-        self.gpib.select(self.ASICAddr)
-        self.gpib.disconnect()
-
 
     def hexacontrollerOn(self):
-        self.gpib.select(self.HexAddr)
-        self.gpib.write("VOLT 12.0")
-        self.gpib.write("CURR 1.0")
-        self.gpib.write("OUTP ON")
+        self.gpib.write("INST:SEL OUT1\nVOLT 12.0")
+        self.gpib.write("INST:SEL OUT1\nCURR 1.0")
+        self.gpib.write("INST:SEL OUT1\nOUTP ON")
 
     def hexacontrollerOff(self):
-        self.gpib.select(self.HexAddr)
-        self.gpib.write("OUTP OFF")
+        self.gpib.write("INST:SEL OUT1\nOUTP OFF")
 
     def ECONT_On(self):
-        self.gpib.select(self.ASICAddr)
-        self.gpib.write("VOLT 1.2")
-        self.gpib.write("CURR 0.6")
-        self.gpib.write("OUTP ON")
+        self.gpib.write("INST:SEL OUT2\nVOLT 1.20")
+        self.gpib.write("INST:SEL OUT2\nCURR 0.60")
+        self.gpib.write("INST:SEL OUT2\nOUTP ON")
 
     def ECONT_Off(self):
-        self.gpib.select(self.ASICAddr)
-        self.gpib.write("OUTP OFF")
+        self.gpib.write("INST:SEL OUT2\nOUTP OFF")
 
     def ID(self):
-        self.gpib.select(self.HexAddr)
-        print(self.gpib.query("*IDN?"))
-        self.gpib.select(self.ASICAddr)
-        print(self.gpib.query("*IDN?"))
+        print(self.gpib.query("*IDN?")[:-1])
 
     def Read_Power_Hexacontroller(self):
-        self.gpib.select(self.HexAddr)
-        v=self.gpib.query("MEAS:VOLT?")[:-2]
-        i=self.gpib.query("MEAS:CURR?")[:-2]
-        return v,i
+        v=self.gpib.query("INST:SEL OUT1\nMEAS:VOLT?")[:-1]
+        i=self.gpib.query("INST:SEL OUT1\nMEAS:CURR?")[:-1]
+        return float(v),float(i)
 
     def Read_Power_ECON(self):
-        self.gpib.select(self.ASICAddr)
-        v=self.gpib.query("MEAS:VOLT?")[:-2]
-        i=self.gpib.query("MEAS:CURR?")[:-2]
-        return v,i
+        v=self.gpib.query("INST:SEL OUT2\nMEAS:VOLT?")[:-1]
+        i=self.gpib.query("INST:SEL OUT2\nMEAS:CURR?")[:-1]
+        return float(v),float(i)
 
 if __name__=='__main__':
     import argparse
@@ -69,8 +54,8 @@ if __name__=='__main__':
     parser.add_argument('--ID', default=False, action='store_true', help='Read id numbers')
     parser.add_argument('--disconnect', default=False, action='store_true', help='Disconnect gpib')
     parser.add_argument('--logName', default='logFile.log', help='log name')
-    parser.add_argument('--time', default=15, help='Frequency (in seconds) of how often to read the power')
-    parser.add_argument('--ip', default='192.168.0.50', help='IP Address of the gpib controller')
+    parser.add_argument('--time', default=15, type=float, help='Frequency (in seconds) of how often to read the power')
+    parser.add_argument('--ip', default='192.168.206.50', help='IP Address of the gpib controller')
     args = parser.parse_args()
 
     ps=psControl(host=args.ip)
@@ -107,7 +92,7 @@ if __name__=='__main__':
             while True:
                 v_ASIC,i_ASIC=ps.Read_Power_ECON()
                 v_FPGA,i_FPGA=ps.Read_Power_Hexacontroller()
-                logging.info(f'FPGA Voltage: {v_FPGA}, FPGA Current: {i_FPGA}, ASIC Voltage: {v_ASIC}, ASIC Current:{i_ASIC}')
+                logging.info(f'FPGA Voltage: {v_FPGA:.03f}, FPGA Current: {i_FPGA:.03f}, ASIC Voltage: {v_ASIC:.03f}, ASIC Current:{i_ASIC:.03f}')
                 sleep(args.time)
         except KeyboardInterrupt:
             logging.info(f'Closing')
