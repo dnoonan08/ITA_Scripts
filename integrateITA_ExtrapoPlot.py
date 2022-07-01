@@ -260,8 +260,10 @@ if __name__=='__main__':
                          help='If nonzero, x most recent measurements (<0 for all), to estimate when goal met.')
     parser.add_argument ('--quick', '-q', dest='quick', action="store_true", default =False,
                          help='Stop after '+str(quickrun)+' rows.')
-    parser.add_argument ('--noPlot', dest='makePlot', action="store_false", default =True,
-                         help='Skip plotting step')
+    parser.add_argument ('--plot', dest='makePlot', action="store_true", default =False,
+                         help='Run plotting step')
+    parser.add_argument ('--fileName', dest='fileName', default =None,
+                         help='File name to save data to')
     parser.add_argument ('--continuous', dest='continuousRun', action="store_true", default =False,
                          help='Run continuously, sleeping 60 seconds between')
 
@@ -306,10 +308,11 @@ if __name__=='__main__':
 
     if options.continuousRun:
         first=True
+        total=0
         while True:
             now = pd.Timestamp.now()
             cmdT2 = now.strftime(datetimeformat_str)
-            total, df  = getITAdata(cmdT1, cmdT2)
+            total_, df  = getITAdata(cmdT1, cmdT2)
 #            df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
             df['timestamp'] = pd.to_datetime(df['timestamp'])
             if first:
@@ -320,6 +323,14 @@ if __name__=='__main__':
 #                print(df.loc[N-1:N])
                 print(df)
             cmdT1 = cmdT2
+            total += total_
+            goalFrac=""
+            if goal>0:
+                goalFrac=f' ({(total/goal)*100:.02f}% of goal)'
+            print(f'Total protons delivered: {total:.04e}{goalFrac}')
             sleep(60)
     else:
         df = normalRun(cmdT1, cmdT2, debug, goal, extrapolate, extrapo)
+
+    if options.fileName is not None:
+        df.to_csv(options.fileName)
