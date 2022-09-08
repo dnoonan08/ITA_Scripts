@@ -30,7 +30,7 @@ class psControl:
     def SetVoltage(self, board, voltage):
         self.select(board)
 
-        if voltage<=1.5 and voltage >= 0.9:
+        if float(voltage)<=1.5 and float(voltage) >= 0.9:
             self.gpib.write(f"VOLT {voltage}")
             return True
         else:
@@ -77,7 +77,7 @@ if __name__=='__main__':
     parser.add_argument('--setVoltage', default=None, help='Voltage setting (1.2 V if left unset)')
     parser.add_argument('--logName', default='logFile.log', help='log name')
     parser.add_argument('--time', default=15, type=float,help='Frequency (in seconds) of how often to read the power')
-    parser.add_argument('--ip', default='192.168.0.50', help='IP Address of the gpib controller')
+    parser.add_argument('--ip', default='192.168.206.50', help='IP Address of the gpib controller')
     parser.add_argument('--board', default=46, type=int, help='Board number of hexacontroller (used to determing which power supply to control)')
 
     args = parser.parse_args()
@@ -90,7 +90,7 @@ if __name__=='__main__':
     if args.Off:
         ps.ASICOff(args.board)
     if not args.On and not args.setVoltage is None:
-        ps.SetVoltage(args.board,args.voltage)
+        ps.SetVoltage(args.board,args.setVoltage)
     if args.id:
         print(ps.ID(args.board))
     if args.read:
